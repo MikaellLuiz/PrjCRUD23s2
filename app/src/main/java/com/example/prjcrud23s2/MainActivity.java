@@ -1,5 +1,6 @@
 package com.example.prjcrud23s2;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -14,11 +15,15 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prjcrud23s2.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -30,6 +35,16 @@ public class MainActivity extends AppCompatActivity {
     private View includeListagem;
     private View includeCadastrarAmigo;
 
+    public EditText edtNome;
+
+    public EditText edtCelular;
+
+    public void esconderTeclado() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(edtNome.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(edtCelular.getWindowToken(), 0);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,14 +53,44 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
-
+        /*
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+         */
 
         //referenciando os layouts
         includeListagem = findViewById(R.id.include_listagem);
         includeCadastrarAmigo = findViewById(R.id.include_cadastro);
+
+        edtNome = findViewById(R.id.edtNome);
+        edtCelular = findViewById(R.id.edtCelular);
+
+        edtNome.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    esconderTeclado();
+                }
+            }
+        });
+
+        edtCelular.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    esconderTeclado();
+                }
+            }
+        });
+
+        View rootView = findViewById(android.R.id.content);
+        rootView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                esconderTeclado();
+            }
+        });
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -88,6 +133,9 @@ public class MainActivity extends AppCompatActivity {
 
                 if (sucesso)
                 {
+                    DbAmigo amigo = dao.ultimoAmigo();
+                    adapter.inserirAmigo(amigo);
+
                     Snackbar.make(view, "Dados de ["+nome+"] salvos com sucesso!", Snackbar.LENGTH_LONG)
                             .setAction("Ação", null).show();
 
@@ -106,8 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
-
+        configurarRecycler();
 
     }
 
@@ -133,10 +180,28 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    RecyclerView recyclerView;
+    DbAmigosAdapter adapter;
+
+    private void configurarRecycler() {
+        // Ativando o layou para uma lista tipo RecyclerView e configurando-a
+
+        recyclerView = (RecyclerView)findViewById(R.id.recyclerView);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        DbAmigosDAO dao = new DbAmigosDAO(this);
+        adapter = new DbAmigosAdapter(dao.listarAmigos());
+        recyclerView.setAdapter(adapter);
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+    }
+
+    /*
     @Override
     public boolean onSupportNavigateUp() {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+    */
+
 }

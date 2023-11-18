@@ -22,7 +22,8 @@
     <include
         android:id="@+id/include_listagem"
         layout="@layout/activity_listagem"
-        android:visibility="visible"/>
+        android:layout_height="269dp"
+        android:visibility="visible" />
 
     <include
         android:id="@+id/include_cadastro"
