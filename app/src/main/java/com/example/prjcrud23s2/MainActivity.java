@@ -1,6 +1,7 @@
 package com.example.prjcrud23s2;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -26,6 +27,7 @@ import android.view.MenuItem;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,12 +46,34 @@ public class MainActivity extends AppCompatActivity {
         imm.hideSoftInputFromWindow(edtNome.getWindowToken(), 0);
         imm.hideSoftInputFromWindow(edtCelular.getWindowToken(), 0);
     }
+    DbAmigo amigoAlterado = null;
+    private int getIndex(Spinner spinner, String myString) {
+        int index = 0;
+        for (int i=0;(i<spinner.getCount())&&!(spinner.getItemAtPosition(i).toString().equalsIgnoreCase(myString));i++);
+        return index;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
+
+        Intent intent = getIntent();
+        if(intent.hasExtra("amigo")){
+            findViewById(R.id.include_cadastro).setVisibility(View.VISIBLE);
+            findViewById(R.id.include_listagem).setVisibility(View.INVISIBLE);
+            findViewById(R.id.fab).setVisibility(View.INVISIBLE);
+            amigoAlterado = (DbAmigo) intent.getSerializableExtra("amigo");
+            EditText edtNome    = (EditText)findViewById(R.id.edtNome);
+            EditText edtCelular = (EditText)findViewById(R.id.edtCelular);
+
+            edtNome.setText(amigoAlterado.getNome());
+            edtCelular.setText(amigoAlterado.getCelular());
+            int status = 2;
+        }
+
+
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
@@ -116,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnSalvar = (Button)findViewById(R.id.btnSalvar);
         btnSalvar.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 // Sincronizando os campos com o contexto
@@ -129,13 +154,22 @@ public class MainActivity extends AppCompatActivity {
 
                 // Gravando no banco de dados
                 DbAmigosDAO dao = new DbAmigosDAO(getBaseContext());
-                boolean sucesso = dao.salvar(nome, celular, situacao);
-
-                if (sucesso)
-                {
+                boolean sucesso;
+                if(amigoAlterado != null) {
+                    sucesso = dao.salvar(amigoAlterado.getId(), nome, celular, 2);
+                } else {
+                    sucesso = dao.salvar(nome, celular, 1);
+                }
+                if (sucesso) {
                     DbAmigo amigo = dao.ultimoAmigo();
-                    adapter.inserirAmigo(amigo);
 
+                    if (amigoAlterado != null) {
+                        adapter.atualizarAmigo(amigo);
+                        amigoAlterado = null;
+                        configurarRecycler();
+                    } else {
+                        adapter.inserirAmigo(amigo);
+                    }
                     Snackbar.make(view, "Dados de ["+nome+"] salvos com sucesso!", Snackbar.LENGTH_LONG)
                             .setAction("Ação", null).show();
 
@@ -146,16 +180,14 @@ public class MainActivity extends AppCompatActivity {
                     // Atualizando visibilidades
                     findViewById(R.id.include_listagem).setVisibility(View.VISIBLE);
                     findViewById(R.id.include_cadastro).setVisibility(View.INVISIBLE);
-                    findViewById(R.id.fab).setVisibility(View.VISIBLE);}
-                else
-                {
+                    findViewById(R.id.fab).setVisibility(View.VISIBLE);
+                }else{
                     Snackbar.make(view, "Erro ao salvar, consulte o log!", Snackbar.LENGTH_LONG)
                             .setAction("Ação", null).show();
                 }
             }
         });
         configurarRecycler();
-
     }
 
     @Override
@@ -195,6 +227,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
     }
 
+
+
+
     /*
     @Override
     public boolean onSupportNavigateUp() {
@@ -205,3 +240,4 @@ public class MainActivity extends AppCompatActivity {
     */
 
 }
+
